@@ -1,14 +1,20 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url)
   const id = url.searchParams.get('id')
 
   if (!id) {
-    return new Response("ID is required", { 
-      status: 400,
-      headers: { "Content-Type": "text/plain" }
-    })
+    return new Response("ID required", { status: 400 })
   }
 
   const supabase = createClient(
@@ -22,11 +28,11 @@ Deno.serve(async (req: Request) => {
     .eq('id', id)
     .single()
 
-  const title = reg?.name || "eFootball Kenya League"
+  const title = escapeHtml(reg?.name || "eFootball Kenya League")
   const image = reg?.avatar_url || "https://computerscience.website/assets/efkl.png"
-  const desc = reg 
+  const desc = escapeHtml(reg 
     ? `Entry Fee: KES ${reg.registration_amount}. Join the eFootball Kenya League squad!`
-    : "Click to view tournament details and register."
+    : "Click to view tournament details and register.")
 
   const redirectUrl = `https://efootballkenyaleague.website/registration/${id}`
 
