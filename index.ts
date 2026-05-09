@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
     ? `Entry Fee: KES ${reg.registration_amount}. Join the eFootball Kenya League squad!`
     : "Click to view tournament details and register.")
 
-  const redirectUrl = `https://efootballkenyaleague.website/registration/${id}`
+   const redirectUrl = `https://efootballkenyaleague.website/registration/${id}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -54,7 +54,10 @@ Deno.serve(async (req: Request) => {
   <meta name="twitter:description" content="${desc}">
   <meta name="twitter:image" content="${image}">
 
-  <script>window.location.replace("${redirectUrl}");</script>
+  <!-- Stronger Redirect -->
+  <script>
+    window.location.replace("${redirectUrl}");
+  </script>
   <meta http-equiv="refresh" content="0;url=${redirectUrl}">
 </head>
 <body style="background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">
