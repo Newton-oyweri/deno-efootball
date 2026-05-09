@@ -1,3 +1,7 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+
+serve((req: Request) => {
+  return new Response(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,10 +15,14 @@
   <meta property="og:type" content="website">
 
   <script>
-    window.location.href = "https://efootballkenyaleague.website/registration/123";
+    window.location.href = "https://efootballkenyaleague.website";
   </script>
 </head>
 <body style="background:#000;color:white;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">
-  <h1>Loading Tournament...</h1>
+  <h1>Loading...</h1>
 </body>
 </html>
+  `, {
+    headers: { "Content-Type": "text/html; charset=utf-8" }
+  })
+})
