@@ -1,8 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+Deno.serve((req: Request) => {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id") || "";
 
-serve((req: Request) => {
-  return new Response(`
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,19 +10,19 @@ serve((req: Request) => {
   <title>eFootball Kenya League</title>
   
   <meta property="og:title" content="eFootball Kenya League">
-  <meta property="og:description" content="Join the squad!">
+  <meta property="og:description" content="Join the squad now!">
   <meta property="og:image" content="https://computerscience.website/assets/efkl.png">
-  <meta property="og:type" content="website">
-
-  <script>
-    window.location.href = "https://efootballkenyaleague.website";
-  </script>
+  <meta property="og:url" content="${url.href}">
 </head>
-<body style="background:#000;color:white;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">
-  <h1>Loading...</h1>
+<body style="background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">
+  <div style="text-align:center">
+    <h1>Loading Tournament...</h1>
+    ${id ? `<p>ID: ${id}</p>` : ''}
+  </div>
 </body>
-</html>
-  `, {
+</html>`;
+
+  return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" }
-  })
-})
+  });
+});
