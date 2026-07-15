@@ -9,6 +9,23 @@ function escapeHtml(unsafe: string): string {
     .replace(/'/g, "&#039;")
 }
 
+// Function to compress Supabase images on-the-fly for WhatsApp's 300KB limit
+function getOptimizedImageUrl(supabaseUrl: string, originalUrl: string): string {
+  if (!originalUrl) return "https://computerscience.website/assets/efkl.png";
+  
+  // If it's a Supabase storage URL, we can use their built-in image transform API
+  if (originalUrl.includes("/storage/v1/object/public/")) {
+    const bucketAndPath = originalUrl.split("/storage/v1/object/public/")[1];
+    const [bucket, ...pathParts] = bucketAndPath.split("/");
+    const filePath = pathParts.join("/");
+    
+    // Returns a compressed, resized version (approx 40-80KB) perfect for WhatsApp
+    return `${supabaseUrl}/storage/v1/render/image/public/${bucket}/${filePath}?width=400&height=400&resize=contain&quality=80`;
+  }
+  
+  return originalUrl;
+}
+
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url)
   const id = url.searchParams.get('id')
@@ -17,10 +34,16 @@ Deno.serve(async (req: Request) => {
     return new Response("ID required", { status: 400 })
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-  )
+  const userAgent = req.headers.get("user-agent") || ""
+  
+  // 1. Precise Bot Detection (WhatsApp, Facebook, Discord, Twitter/X, Telegram)
+  const isBot = /WhatsApp|facebookexternalhit|Twitterbot|Discordbot|TelegramBot|Slackbot|LinkedInBot/i.test(userAgent)
+  const redirectUrl = "https://efootballkenyaleague.website/register"
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+
+  const supabase = createClient(supabaseUrl, supabaseKey)
 
   const { data: reg } = await supabase
     .from('registrations')
@@ -29,20 +52,25 @@ Deno.serve(async (req: Request) => {
     .single()
 
   const title = escapeHtml(reg?.name || "eFootball Kenya League")
-  const image = reg?.avatar_url || "https://computerscience.website/assets/efkl.png"
+  
+  // Apply our on-the-fly compression so WhatsApp doesn't reject it
+  const rawImage = reg?.avatar_url || "https://computerscience.website/assets/efkl.png"
+  const image = getOptimizedImageUrl(supabaseUrl, rawImage)
+
   const desc = escapeHtml(reg 
     ? `Entry Fee: KES ${reg.registration_amount}. Join the eFootball Kenya League squad!`
     : "Click to view tournament details and register.")
 
-  // Simplified redirect - Main registration page
-  const redirectUrl = "https://efootballkenyaleague.website/register"  
-  // OR use: "https://efootballkenyaleague.website/registrations"
+  // 2. If a REAL Human is opening the link, send them straight to the site instantly
+  if (!isBot) {
+    return Response.redirect(redirectUrl, 302)
+  }
 
+  // 3. If a BOT (WhatsApp crawler) is reading the link, return ONLY clean metadata
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   
   <meta property="og:title" content="${title}">
@@ -55,19 +83,8 @@ Deno.serve(async (req: Request) => {
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${desc}">
   <meta name="twitter:image" content="${image}">
-
-  <script>
-    setTimeout(() => {
-      window.location.replace("${redirectUrl}");
-    }, 700);
-  </script>
-  <meta http-equiv="refresh" content="1;url=${redirectUrl}">
 </head>
-<body style="background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">
-  <div style="text-align:center">
-    <h2>Loading Registration...</h2>
-  </div>
-</body>
+<body></body>
 </html>`
 
   return new Response(html, {
